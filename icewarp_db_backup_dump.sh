@@ -1,9 +1,9 @@
 #!/bin/bash
-backuppath="/mnt/data/backup"
+backuppath="/mnt/mailstore/backup/`date +%Y%m%d-%H%M`"
 mkdir -p ${backuppath}
 backupsrvhost="${1}" # if we take backups from another host
 backupsrvport="${2}" # than the one we connect to
-dbpass="$(cat /opt/icewarp/config/_webmail/server.xml | grep dbpass | tr -d '\040\011\015' | perl -pe 's|^\<dbpass\>(.*)\</dbpass\>$|\1|')"
+dbpass="$(cat /opt/icewarp/config/_webmail/server.xml | grep dbpass | tr -d '\040\011\015' | perl -pe 's|^\<dbpass\>(.*)\</dbpass\>$|\1|' | sed 's/&nbsp;/ /g; s/&amp;/\&/g; s/&lt;/\</g; s/&gt;/\>/g; s/&quot;/\"/g; s/#&#39;/\'"'"'/g; s/&ldquo;/\"/g; s/&rdquo;/\"/g;')"
 wcdbuser="$(cat /opt/icewarp/config/_webmail/server.xml | grep dbuser | tr -d '\040\011\015' | perl -pe 's|^\<dbuser\>(.*)\</dbuser\>$|\1|')"
 read -r dbhost dbport wcdbname <<< $(cat /opt/icewarp/config/_webmail/server.xml | grep dbconn | tr -d '\040\011\015' | perl -pe 's|^\<dbconn\>mysql:host=(.*);port=(.*);dbname=(.*)\</dbconn\>$|\1 \2 \3|')
 read -r accdbname accdbuser <<< $(/opt/icewarp/tool.sh get system c_system_storage_accounts_odbcconnstring | perl -pe 's|^c_system_storage_accounts_odbcconnstring: (.*);(.*);.*;.*;.*;.*$|\1 \2|')
@@ -17,21 +17,21 @@ if [ ! -z "${backupsrvhost}" ]; then dbhost="${backupsrvhost}"; fi # if we take 
 if [ ! -z "${backupsrvport}" ]; then dbport="${backupsrvport}"; fi # than the one we connect to
 if [[ "${accdbuser}" = *"DBUIWC"* ]]
 then # generic_cloud ( DBUIWC*, DBUIWC*EAS, DBUIWC*WC)
-/usr/bin/mysqldump --single-transaction -u ${accdbuser} -p${dbpass} -h${dbhost} -P ${dbport} ${accdbname} | gzip -c | cat > ${backuppath}/bck_db_acc_asp_grw_dc_${accdbname}`date +%Y%m%d-%H%M`.sql.gz &
-/usr/bin/mysqldump --single-transaction -u ${easdbuser} -p${easdbpass} -h${dbhost} -P ${dbport} ${easdbname} | gzip -c | cat > ${backuppath}/bck_db_eas_${easdbname}`date +%Y%m%d-%H%M`.sql.gz &
-/usr/bin/mysqldump --single-transaction -u ${accdbuser} -p${dbpass} -h${dbhost} -P ${dbport} ${wcdbname} | gzip -c | cat > ${backuppath}/bck_db_wc_${wcdbname}`date +%Y%m%d-%H%M`.sql.gz &
+/usr/bin/mysqldump --single-transaction -u ${accdbuser} -p${dbpass} -h${dbhost} -P ${dbport} ${accdbname} | gzip -c | cat > ${backuppath}/bck_db_acc_asp_grw_dc_${accdbname}-`date +%Y%m%d-%H%M`.sql.gz &
+/usr/bin/mysqldump --single-transaction -u ${easdbuser} -p${easdbpass} -h${dbhost} -P ${dbport} ${easdbname} | gzip -c | cat > ${backuppath}/bck_db_eas_${easdbname}-`date +%Y%m%d-%H%M`.sql.gz &
+/usr/bin/mysqldump --single-transaction -u ${accdbuser} -p${dbpass} -h${dbhost} -P ${dbport} ${wcdbname} | gzip -c | cat > ${backuppath}/bck_db_wc_${wcdbname}-`date +%Y%m%d-%H%M`.sql.gz &
 else # non-generic cloud ( other db name settings )
-/usr/bin/mysqldump --single-transaction -u ${accdbuser} -p${dbpass} -h${dbhost} -P ${dbport} ${accdbname} | gzip -c | cat > ${backuppath}/bck_db_acc_${accdbname}`date +%Y%m%d-%H%M`.sql.gz &
-/usr/bin/mysqldump --single-transaction -u ${aspdbuser} -p${dbpass} -h${dbhost} -P ${dbport} ${aspdbname} | gzip -c | cat > ${backuppath}/bck_db_asp_${aspdbname}`date +%Y%m%d-%H%M`.sql.gz &
-/usr/bin/mysqldump --single-transaction -u ${grwdbuser} -p${dbpass} -h${dbhost} -P ${dbport} ${grwdbname} | gzip -c | cat > ${backuppath}/bck_db_grw_${grwdbname}`date +%Y%m%d-%H%M`.sql.gz &
-/usr/bin/mysqldump --single-transaction -u ${dcdbuser} -p${dbpass} -h${dbhost} -P ${dbport} ${dcdbname} | gzip -c | cat > ${backuppath}/bck_db_dc_${dcdbname}`date +%Y%m%d-%H%M`.sql.gz &
-/usr/bin/mysqldump --single-transaction -u ${easdbuser} -p${easdbpass} -h${dbhost} -P ${dbport} ${easdbname} | gzip -c | cat > ${backuppath}/bck_db_eas_${easdbname}`date +%Y%m%d-%H%M`.sql.gz &
-/usr/bin/mysqldump --single-transaction -u ${wcdbuser} -p${dbpass} -h${dbhost} -P ${dbport} ${wcdbname} | gzip -c | cat > ${backuppath}/bck_db_wc_${wcdbname}`date +%Y%m%d-%H%M`.sql.gz &
+/usr/bin/mysqldump --single-transaction -u ${accdbuser} -p${dbpass} -h${dbhost} -P ${dbport} ${accdbname} | gzip -c | cat > ${backuppath}/bck_db_acc_${accdbname}-`date +%Y%m%d-%H%M`.sql.gz &
+/usr/bin/mysqldump --single-transaction -u ${aspdbuser} -p${dbpass} -h${dbhost} -P ${dbport} ${aspdbname} | gzip -c | cat > ${backuppath}/bck_db_asp_${aspdbname}-`date +%Y%m%d-%H%M`.sql.gz &
+/usr/bin/mysqldump --single-transaction -u ${grwdbuser} -p${dbpass} -h${dbhost} -P ${dbport} ${grwdbname} | gzip -c | cat > ${backuppath}/bck_db_grw_${grwdbname}-`date +%Y%m%d-%H%M`.sql.gz &
+/usr/bin/mysqldump --single-transaction -u ${dcdbuser} -p${dbpass} -h${dbhost} -P ${dbport} ${dcdbname} | gzip -c | cat > ${backuppath}/bck_db_dc_${dcdbname}-`date +%Y%m%d-%H%M`.sql.gz &
+/usr/bin/mysqldump --single-transaction -u ${easdbuser} -p${easdbpass} -h${dbhost} -P ${dbport} ${easdbname} | gzip -c | cat > ${backuppath}/bck_db_eas_${easdbname}-`date +%Y%m%d-%H%M`.sql.gz &
+/usr/bin/mysqldump --single-transaction -u ${wcdbuser} -p${dbpass} -h${dbhost} -P ${dbport} ${wcdbname} | gzip -c | cat > ${backuppath}/bck_db_wc_${wcdbname}-`date +%Y%m%d-%H%M`.sql.gz &
 fi
 wait ${!}
-tar -czf ${backuppath}/bck_cnf`date +%Y%m%d-%H%M`.tgz /opt/icewarp/config > /dev/null 2>&1
-tar -czf ${backuppath}/bck_cal`date +%Y%m%d-%H%M`.tgz /opt/icewarp/calendar > /dev/null 2>&1
-/opt/icewarp/tool.sh export account "*@*" u_backup > ${backuppath}/bck_acc_backup`date +%Y%m%d-%H%M`.csv
-/opt/icewarp/tool.sh export domain "*" d_backup > ${backuppath}/bck_dom_backup`date +%Y%m%d-%H%M`.csv
+tar -czf ${backuppath}/bck_cnf-`date +%Y%m%d-%H%M`.tgz /opt/icewarp/config > /dev/null 2>&1
+tar -czf ${backuppath}/bck_cal-`date +%Y%m%d-%H%M`.tgz /opt/icewarp/calendar > /dev/null 2>&1
+/opt/icewarp/tool.sh export account "*@*" u_backup > ${backuppath}/bck_acc_backup-`date +%Y%m%d-%H%M`.csv
+/opt/icewarp/tool.sh export domain "*" d_backup > ${backuppath}/bck_dom_backup-`date +%Y%m%d-%H%M`.csv
 find ${backuppath}/ -type f -name "bck_*" -mtime +3 -delete > /dev/null 2>&1
 exit 0
